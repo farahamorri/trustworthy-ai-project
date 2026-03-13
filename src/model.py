@@ -25,7 +25,7 @@ class CreditModel(nn.Module):
         return x
 
 # 2. Fonction d'entraînement
-def train_model(X_train, y_train, epochs=50, lr=0.01):
+def train_model(X_train, y_train, epochs=50, lr=0.01, sample_weights=None):
     print("\n🚀 Début de l'entraînement du modèle PyTorch...")
     
     # PyTorch ne comprend pas Pandas. Il faut convertir les données en "Tenseurs"
@@ -37,8 +37,12 @@ def train_model(X_train, y_train, epochs=50, lr=0.01):
     input_dim = X_train.shape[1] # C'est le chiffre 23
     model = CreditModel(input_dim)
     
-    # Fonction de perte (Binary Cross Entropy) et Optimiseur (Adam)
-    criterion = nn.BCEWithLogitsLoss() 
+    # # Fonction de perte (Binary Cross Entropy) et Optimiseur (Adam)
+    # criterion = nn.BCEWithLogitsLoss() 
+    # optimizer = optim.Adam(model.parameters(), lr=lr)
+
+    # 🔴 CHANGEMENT ICI : On met reduction='none' pour pouvoir appliquer nos poids personnalisés
+    criterion = nn.BCEWithLogitsLoss(reduction='none') 
     optimizer = optim.Adam(model.parameters(), lr=lr)
 
     # Boucle d'apprentissage
@@ -48,6 +52,13 @@ def train_model(X_train, y_train, epochs=50, lr=0.01):
         
         outputs = model(X_tensor) # Le modèle fait ses prédictions
         loss = criterion(outputs, y_tensor) # On calcule l'erreur
+
+        # 🔴 CHANGEMENT ICI : Application du Reweighting
+        if sample_weights is not None:
+            loss = loss * sample_weights # On multiplie l'erreur par le poids de l'individu
+
+        # 4. LA LIGNE CRUCIALE : on fait la moyenne pour obtenir UN SEUL chiffre (scalaire)
+        loss = loss.mean()
         
         loss.backward() # Rétropropagation (calcul des gradients)
         optimizer.step() # Mise à jour des poids
