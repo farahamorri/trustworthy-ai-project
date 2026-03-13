@@ -1,0 +1,12 @@
+# Ignorer le dossier des données
+data/
+
+# Ignorer les modèles sauvegardés (les poids PyTorch sont très lourds)
+*.pth
+*.pt
+
+# Ignorer les dossiers virtuels Python et les caches
+.venv/
+env/
+__pycache__/
+.ipynb_checkpoints/
