@@ -107,3 +107,20 @@ def evaluate_model(model, X_test, y_test):
     print(classification_report(y_test, pred_numpy))
     
     return acc
+
+def evaluate_model_threshold(model, X_test, y_test, threshold=0.5):
+    """Évalue le modèle avec un seuil de décision sur mesure."""
+    model.eval()
+    X_tensor = torch.tensor(X_test.values, dtype=torch.float32)
+    
+    with torch.no_grad():
+        outputs = model(X_tensor)
+        probabilities = torch.sigmoid(outputs)
+        # 🔴 CHANGEMENT ICI : On remplace .round() par notre seuil
+        predictions = (probabilities >= threshold).float()
+
+    pred_numpy = predictions.numpy().flatten()
+    print(f"\n🎯 Performances avec Seuil = {threshold*100}%")
+    print(classification_report(y_test, pred_numpy))
+    
+    return pred_numpy

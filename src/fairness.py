@@ -139,3 +139,64 @@ def plot_fairness_comparison(mf_before, mf_after):
 
     plt.tight_layout()
     plt.show()
+
+def get_combined_weights(X_train, y_train, class_weights):
+    """
+    Calculates instance weights combining Kamiran & Calders (Fairness) 
+    and standard Class Weights (Imbalance mitigation).
+    """
+    print("\n⚖️ Calculating COMBINED weights (Fairness + Class Imbalance) by Olivia...")
+    
+    sensitive_attr = (X_train['SEX'] > 0).astype(int).values
+    y = y_train.values
+    N = len(y)
+    
+    weights = np.zeros(N)
+    
+    for a in [0, 1]:
+        for target in [0, 1]:
+            # 1. Find the masks for this specific subgroup (e.g., Women who Defaulted)
+            mask_a = (sensitive_attr == a)
+            mask_y = (y == target)
+            mask_ay = mask_a & mask_y
+            
+            # Count occurrences
+            count_a = mask_a.sum()
+            count_y = mask_y.sum()
+            count_ay = mask_ay.sum()
+            
+            # 2. Kamiran & Calders Fairness Weight
+            if count_ay > 0:
+                fairness_weight = (count_a * count_y) / (N * count_ay)
+            else:
+                fairness_weight = 1.0
+                
+            # 3. Class Imbalance Weight
+            # class_weights[0] is for Good Payers, class_weights[1] is for Defaulters
+            imbalance_weight = class_weights[target]
+            
+            # 4. Multiply both weights to get the ultimate instance weight
+            weights[mask_ay] = fairness_weight * imbalance_weight
+                
+    # Return as a PyTorch tensor with shape [N, 1]
+    return torch.tensor(weights, dtype=torch.float32).unsqueeze(1)
+
+
+def evaluate_fairness_threshold(model, X_test, y_test, threshold=0.5):
+    """Évalue l'équité avec un seuil de décision sur mesure."""
+    model.eval()
+    X_tensor = torch.tensor(X_test.values, dtype=torch.float32)
+    with torch.no_grad():
+        outputs = model(X_tensor)
+        # 🔴 CHANGEMENT ICI AUSSI
+        predictions = (torch.sigmoid(outputs) >= threshold).float().numpy().flatten()
+        
+    y_true = y_test.values
+    sensitive_feature = (X_test['SEX'] > 0).astype(int) 
+    
+    mf = MetricFrame(metrics=selection_rate, y_true=y_true, y_pred=predictions, sensitive_features=sensitive_feature)
+    
+    dpd = demographic_parity_difference(y_true, predictions, sensitive_features=sensitive_feature)
+    print(f"⚖️ Fairness (Seuil = {threshold*100}%) -> Gap Hommes/Femmes : {dpd * 100:.2f}%")
+    
+    return mf
