@@ -2,68 +2,81 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import numpy as np
-from torch.utils.data import TensorDataset, DataLoader # 🔴 L'import qui manquait !
+from torch.utils.data import TensorDataset, DataLoader
 from opacus import PrivacyEngine
-from art.estimators.classification import PyTorchClassifier
-from art.attacks.inference.membership_inference import MembershipInferenceBlackBox
 from sklearn.metrics import accuracy_score
-from src.model import CreditModel
+# Make sure to import your model architecture
+from src.model import CreditModel 
 
 def attack_mia(model, X_train, y_train, X_test, y_test):
-    print("\n🕵️‍♀️ Phase 4 : Attaque MIA (Rule-Based) par Olivia...")
+    """Simulates a rule-based Membership Inference Attack based on generalization gap."""
+    print("\n🕵️‍♀️ Phase 4: MIA Attack (Rule-Based) by Olivia...")
     
     model.eval()
     with torch.no_grad():
-        # Le pirate interroge le modèle sur les données Train
+        # Attacker queries the model on Train data
         out_train = model(torch.tensor(X_train.values, dtype=torch.float32))
         pred_train = torch.sigmoid(out_train).round().numpy().flatten()
         
-        # Le pirate interroge le modèle sur les données Test
+        # Attacker queries the model on Test data
         out_test = model(torch.tensor(X_test.values, dtype=torch.float32))
         pred_test = torch.sigmoid(out_test).round().numpy().flatten()
 
-    # Le pirate regarde si le modèle a eu juste
+    # Attacker checks if the model was correct
     acc_train = accuracy_score(y_train, pred_train)
     acc_test = accuracy_score(y_test, pred_test)
     
-    # Formule mathématique du succès de l'attaque
-    # Le pirate a 50% de chance de base (hasard). Il gagne des points si le modèle
-    # est beaucoup plus performant sur le Train que sur le Test (Overfitting).
+    # Mathematical formula for attack success
+    # Baseline is 50% (random guessing). The attacker gains advantage if the model
+    # performs significantly better on Train than Test (Overfitting).
     mia_success_rate = 50.0 + ((acc_train - acc_test) / 2) * 100
     
-    print(f"🛑 Taux de succès de l'attaque MIA : {mia_success_rate:.2f}%")
+    print(f"🛑 MIA Attack Success Rate: {mia_success_rate:.2f}%")
     if mia_success_rate > 55.0:
-        print("⚠️ ALERTE : Le modèle fuit des informations privées (Overfitting) !")
+        print("⚠️ ALERT: The model leaks private information (Overfitting detected)!")
     else:
-        print("✅ Le modèle protège bien sa vie privée (le pirate tire au hasard).")
+        print("✅ Privacy preserved: The model is robust against this MIA (attacker is guessing randomly).")
         
     return mia_success_rate
 
 
-def train_private_model(X_train, y_train, epochs=15, lr=0.01):
-    print("\n🛡️ Phase 4 : Défense par Differential Privacy (DP-SGD) par Farah...")
+def train_private_model(X_train, y_train, class_weights=None, epochs=15, lr=0.01):
+    """Trains a model with Differential Privacy (DP-SGD) using Opacus."""
+    print("\n🛡️ Phase 4: Differential Privacy Defense (DP-SGD) by Farah...")
     
     X_tensor = torch.tensor(X_train.values, dtype=torch.float32)
     y_tensor = torch.tensor(y_train.values, dtype=torch.float32).unsqueeze(1)
     
     dataset = TensorDataset(X_tensor, y_tensor)
-    dataloader = DataLoader(dataset, batch_size=256)
+    # Batch size is crucial in DP-SGD. 256 is a good standard.
+    dataloader = DataLoader(dataset, batch_size=256) 
     
-    model = CreditModel(X_train.shape[1])
-    criterion = nn.BCEWithLogitsLoss()
+    input_dim = X_train.shape[1]
+    model = CreditModel(input_dim)
+    
+    # 🔴 CRITICAL FIX: Re-introduce class weights so the model still detects defaults
+    if class_weights is not None:
+        pos_weight_value = class_weights[1] / class_weights[0]
+        pos_weight_tensor = torch.tensor([pos_weight_value], dtype=torch.float32)
+        criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight_tensor)
+    else:
+        criterion = nn.BCEWithLogitsLoss()
+        
     optimizer = optim.Adam(model.parameters(), lr=lr)
     
+    # Initialize Opacus Privacy Engine
     privacy_engine = PrivacyEngine()
     
+    # Wrap the model, optimizer, and dataloader for privacy tracking
     model, optimizer, dataloader = privacy_engine.make_private(
         module=model,
         optimizer=optimizer,
         data_loader=dataloader,
-        noise_multiplier=1.0, 
-        max_grad_norm=1.0,
+        noise_multiplier=1.0, # The amount of noise added to gradients
+        max_grad_norm=1.0,    # Clipping threshold for gradients
     )
     
-    print("Entraînement du modèle privé (ajout de bruit mathématique)...")
+    print("Training private model (injecting mathematical noise)...")
     for epoch in range(epochs):
         model.train()
         for batch_x, batch_y in dataloader:
@@ -73,7 +86,8 @@ def train_private_model(X_train, y_train, epochs=15, lr=0.01):
             loss.backward()
             optimizer.step()
             
-    epsilon = privacy_engine.get_epsilon(1e-5)
-    print(f"🔒 Entraînement terminé ! Budget de confidentialité (Epsilon) : {epsilon:.2f}")
+    # Calculate the privacy budget spent
+    epsilon = privacy_engine.get_epsilon(1e-5) # 1e-5 is delta (chance of DP failure)
+    print(f"🔒 Training complete! Privacy Budget Spent (Epsilon): {epsilon:.2f}")
     
     return model
