@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 def evaluate_fairness(model, X_test, y_test):
     """Audits the model for Demographic Parity between Men and Women."""
-    print("\n⚖️ Starting Fairness Audit")
+    print("Starting Fairness Audit")
     
     # 1. Generate model predictions
     model.eval()
@@ -41,19 +41,19 @@ def evaluate_fairness(model, X_test, y_test):
     
     # Demographic Parity Difference (Absolute gap between the two groups)
     dpd = demographic_parity_difference(y_true, predictions, sensitive_features=sensitive_feature)
-    print(f"🛑 Demographic Parity Difference: {dpd * 100:.2f}%")
+    print(f"Demographic Parity Difference: {dpd * 100:.2f}%")
     
     if dpd > 0.05:
-        print("⚠️ ALERT: The model is biased. The gap between genders exceeds 5%.")
+        print("ALERT: The model is biased. The gap between genders exceeds 5%.")
     else:
-        print("✅ The model is considered fair (gap < 5%).")
+        print("The model is considered fair (gap < 5%).")
         
     return mf
 
 
 def get_sample_weights(X_train, y_train):
     """Calculates instance weights using the Kamiran & Calders mitigation technique."""
-    print("\n⚖️ Calculating mitigation weights (Kamiran & Calders)")
+    print("Calculating mitigation weights (Kamiran & Calders)")
     
     sensitive_attr = (X_train['SEX'] > 0).astype(int).values
     y = y_train.values
@@ -87,9 +87,9 @@ def plot_fairness_comparison(mf_before, mf_after):
     Plots a side-by-side bar chart comparing the selection rates 
     (predictions of Default) for Men and Women, before and after mitigation.
     """
-    print("\n📊 Generating Fairness Comparison Chart...")
+    print("Generating Fairness Comparison Chart")
     
-    # 1. Extract data from the MetricFrames
+    # Extract data from the MetricFrames
     # Group 0 = Men, Group 1 = Women
     rates_before = [mf_before.by_group[0] * 100, mf_before.by_group[1] * 100]
     rates_after = [mf_after.by_group[0] * 100, mf_after.by_group[1] * 100]
@@ -98,7 +98,7 @@ def plot_fairness_comparison(mf_before, mf_after):
     gap_before = abs(rates_before[0] - rates_before[1])
     gap_after = abs(rates_after[0] - rates_after[1])
 
-    # 2. Set up the plot
+    # Set up the plot
     labels = ['Men (Group 0)', 'Women (Group 1)']
     x = np.arange(len(labels))  # Label locations
     width = 0.35  # Bar width
@@ -109,14 +109,14 @@ def plot_fairness_comparison(mf_before, mf_after):
     rects1 = ax.bar(x - width/2, rates_before, width, label='Standard Model (Biased)', color='salmon')
     rects2 = ax.bar(x + width/2, rates_after, width, label='Fair Model (Mitigated)', color='skyblue')
 
-    # 3. Add text, labels, and titles
+    # Add text, labels, and titles
     ax.set_ylabel('% Predicted as Default (Selection Rate)')
     ax.set_title('Impact of Fairness Mitigation (Kamiran & Calders)\nPrediction Rates by Gender', pad=20)
     ax.set_xticks(x)
     ax.set_xticklabels(labels)
     ax.legend()
 
-    # 4. Add data labels on top of the bars
+    # Add data labels on top of the bars
     def autolabel(rects):
         """Attach a text label above each bar, displaying its height."""
         for rect in rects:
@@ -130,7 +130,7 @@ def plot_fairness_comparison(mf_before, mf_after):
     autolabel(rects1)
     autolabel(rects2)
 
-    # 5. Add a text box to summarize the gap reduction
+    # Add a text box to summarize the gap reduction
     props = dict(boxstyle='round', facecolor='white', alpha=0.9, edgecolor='gray')
     summary_text = (f"Gap Before: {gap_before:.1f}%\n"
                     f"Gap After: {gap_after:.1f}%")
@@ -145,7 +145,7 @@ def get_combined_weights(X_train, y_train, class_weights):
     Calculates instance weights combining Kamiran & Calders (Fairness) 
     and standard Class Weights (Imbalance mitigation).
     """
-    print("\n⚖️ Calculating COMBINED weights (Fairness + Class Imbalance) by Olivia...")
+    print("Calculating COMBINED weights (Fairness + Class Imbalance)")
     
     sensitive_attr = (X_train['SEX'] > 0).astype(int).values
     y = y_train.values
@@ -155,7 +155,7 @@ def get_combined_weights(X_train, y_train, class_weights):
     
     for a in [0, 1]:
         for target in [0, 1]:
-            # 1. Find the masks for this specific subgroup (e.g., Women who Defaulted)
+            #Find the masks for this specific subgroup (e.g., Women who Defaulted)
             mask_a = (sensitive_attr == a)
             mask_y = (y == target)
             mask_ay = mask_a & mask_y
@@ -165,17 +165,17 @@ def get_combined_weights(X_train, y_train, class_weights):
             count_y = mask_y.sum()
             count_ay = mask_ay.sum()
             
-            # 2. Kamiran & Calders Fairness Weight
+            #Kamiran & Calders Fairness Weight
             if count_ay > 0:
                 fairness_weight = (count_a * count_y) / (N * count_ay)
             else:
                 fairness_weight = 1.0
                 
-            # 3. Class Imbalance Weight
+            #Class Imbalance Weight
             # class_weights[0] is for Good Payers, class_weights[1] is for Defaulters
             imbalance_weight = class_weights[target]
             
-            # 4. Multiply both weights to get the ultimate instance weight
+            #Multiply both weights to get the ultimate instance weight
             weights[mask_ay] = fairness_weight * imbalance_weight
                 
     # Return as a PyTorch tensor with shape [N, 1]
@@ -183,12 +183,11 @@ def get_combined_weights(X_train, y_train, class_weights):
 
 
 def evaluate_fairness_threshold(model, X_test, y_test, threshold=0.5):
-    """Évalue l'équité avec un seuil de décision sur mesure."""
+    """Evaluates fairness with a custom threshold"""
     model.eval()
     X_tensor = torch.tensor(X_test.values, dtype=torch.float32)
     with torch.no_grad():
         outputs = model(X_tensor)
-        # 🔴 CHANGEMENT ICI AUSSI
         predictions = (torch.sigmoid(outputs) >= threshold).float().numpy().flatten()
         
     y_true = y_test.values
@@ -197,6 +196,6 @@ def evaluate_fairness_threshold(model, X_test, y_test, threshold=0.5):
     mf = MetricFrame(metrics=selection_rate, y_true=y_true, y_pred=predictions, sensitive_features=sensitive_feature)
     
     dpd = demographic_parity_difference(y_true, predictions, sensitive_features=sensitive_feature)
-    print(f"⚖️ Fairness (Seuil = {threshold*100}%) -> Gap Hommes/Femmes : {dpd * 100:.2f}%")
+    print(f"Fairness (threshold = {threshold*100}%) ->  Men/Women : {dpd * 100:.2f}%")
     
     return mf
