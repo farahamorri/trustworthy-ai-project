@@ -162,7 +162,7 @@ def attack_fgsm_smart(model, X_test, y_test, X_test_columns):
         
     acc_adv = accuracy_score(y_test, predictions_adv)
     
-    print(f"🛑 Accuracy under Smart FGSM attack: {acc_adv * 100:.2f}%\n")
+    print(f"Accuracy under Smart FGSM attack: {acc_adv * 100:.2f}%\n")
     
     return X_test_adv_tensor
 
