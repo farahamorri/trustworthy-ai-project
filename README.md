@@ -30,14 +30,3 @@ To ensure both team members gain comprehensive, hands-on experience, we adopted 
 * **Writing (Farah):** Technical justifications for data preparation, bias auditing, the FGSM attack, and the DP-SGD defense.
 * **Writing (Olivia):** Technical justifications for the PyTorch baseline model, bias mitigation, Adversarial Training defense, and the MIA attack.
 
-## 🛠️ Setup and Execution
-*(To be completed as development progresses)*
-```bash
-# Clone the repository
-git clone [https://github.com/your-username/trustworthy-ai-project.git](https://github.com/your-username/trustworthy-ai-project.git)
-
-# Install the required dependencies
-pip install -r requirements.txt
-
-# Run the main pipeline
-python src/main.py

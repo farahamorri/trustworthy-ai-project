@@ -10,3 +10,5 @@ data/
 env/
 __pycache__/
 .ipynb_checkpoints/
+
+new_fairness_study.ipynb
