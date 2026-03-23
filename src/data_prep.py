@@ -14,27 +14,22 @@ class CreditDataAnalyzer:
         self.file_path = os.path.join(self.data_dir, filename)
         self.df = None
         
-        # Attributes for Machine Learning
         self.X_train_scaled = None
         self.X_test_scaled = None
         self.y_train = None
         self.y_test = None
 
-    # ==========================================
-    # 1. LOADING AND SAVING
-    # ==========================================
     def load_data(self):
         """Downloads the dataset if it doesn't exist locally, or loads it from disk."""
         # Disable SSL verification to allow downloading
         ssl._create_default_https_context = ssl._create_unverified_context
         os.makedirs(self.data_dir, exist_ok=True)
         
-        # If the file hasn't been downloaded yet, fetch it
+  
         if not os.path.exists(self.file_path):
             print("Downloading dataset from UCI...")
             url = "https://archive.ics.uci.edu/ml/machine-learning-databases/00350/default%20of%20credit%20card%20clients.xls"
             
-            # Pandas can read directly from a URL, then we save it locally
             self.df = pd.read_excel(url, header=1)
             self.df.to_csv(self.file_path, index=False)
             print("✅ Dataset downloaded and converted to CSV in data/raw/")
@@ -44,9 +39,6 @@ class CreditDataAnalyzer:
             
         return self.df
 
-    # ==========================================
-    # 2. BASIC EXPLORATION
-    # ==========================================
     def explore_basics(self):
         """Displays basic information about the dataset."""
         print("\n--- Basic Exploration ---")
@@ -55,11 +47,9 @@ class CreditDataAnalyzer:
         print("\nMissing values per column:")
         print(self.df.isnull().sum())
         print("\nData preview:")
-        display(self.df.head()) # Use print(self.df.head()) if not in a Jupyter notebook
 
-    # ==========================================
-    # 3. DATA CLEANING
-    # ==========================================
+
+
     def clean_data(self):
         """Cleans duplicate rows, removes the ID column, and renames the target variable."""
         print("\n--- Data Cleaning ---")
@@ -83,11 +73,9 @@ class CreditDataAnalyzer:
                 self.df.rename(columns={name: 'IsDefault'}, inplace=True)
                 break
                 
-        print("✅ Data cleaned (ID removed, target renamed to 'IsDefault').")
+        print("Data cleaned (ID removed, target renamed to 'IsDefault').")
 
-    # ==========================================
-    # 4. EXPLORATORY DATA ANALYSIS (EDA) & VISUALIZATION
-    # ==========================================
+
     def plot_target_distribution(self):
         """Plots the distribution of the target variable."""
         target_counts = self.df['IsDefault'].value_counts(normalize=True) * 100
@@ -131,9 +119,6 @@ class CreditDataAnalyzer:
         plt.xticks(rotation=45)
         plt.show()
 
-    # ==========================================
-    # 5. MACHINE LEARNING PREPARATION
-    # ==========================================
     def prepare_for_modeling(self, test_size=0.2, random_state=42):
         """Splits the data into Train/Test sets and applies standardization."""
         print("\n--- Machine Learning Preparation ---")
@@ -155,7 +140,7 @@ class CreditDataAnalyzer:
         self.X_test_scaled = pd.DataFrame(scaler.transform(self.X_test), 
                                           columns=X.columns, index=self.X_test.index)
         
-        print("✅ Data split and standardized successfully!")
+        print("Data split and standardized successfully!")
         print(f"Training set size: {self.X_train_scaled.shape}")
         print(f"Test set size: {self.X_test_scaled.shape}")
         
@@ -164,7 +149,7 @@ class CreditDataAnalyzer:
     def compute_model_weights(self):
         """Computes class weights to handle dataset imbalance."""
         if self.y_train is None:
-            print("⚠️ Please run 'prepare_for_modeling()' first before computing weights.")
+            print("Please run 'prepare_for_modeling()' first before computing weights.")
             return
             
         weights = compute_class_weight('balanced', classes=np.unique(self.y_train), y=self.y_train)
