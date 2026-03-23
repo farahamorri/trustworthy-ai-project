@@ -12,7 +12,7 @@ from src.model import CreditModel
 
 def attack_fgsm(model, X_test, y_test, epsilon=0.2):
     """Generates an FGSM attack on the test set and evaluates the model's vulnerability."""
-    print(f"\nPhase 3: Starting FGSM Adversarial Attack (by Farah) with epsilon={epsilon}...")
+    print(f"\nPhase 3: Starting FGSM Adversarial Attack with epsilon={epsilon}...")
     
     # Preparation for ART (Adversarial Robustness Toolbox)
     criterion = nn.BCEWithLogitsLoss()
@@ -113,7 +113,7 @@ def train_robust_model(X_train, y_train, baseline_model, class_weights=None, eps
 
 
 def attack_fgsm_smart(model, X_test, y_test, X_test_columns):
-    print("\nPhase 3: Starting Smart FGSM Attack (by Farah)...")
+    print("\nPhase 3: Starting Smart FGSM Attack")
     
     criterion = nn.BCEWithLogitsLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.01)
