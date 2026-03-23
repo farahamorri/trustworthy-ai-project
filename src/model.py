@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 from sklearn.metrics import accuracy_score, classification_report
 
-# 1. Neural Network Architecture Definition
+
 class CreditModel(nn.Module):
     def __init__(self, input_dim, dropout_p=0.3):
         super(CreditModel, self).__init__()
@@ -30,9 +30,9 @@ class CreditModel(nn.Module):
         x = self.output_layer(x) 
         return x
 
-# 2. Training Function
+
 def train_model(X_train, y_train, epochs=100, start_lr=0.01, class_weights=None, dropout_p=0.3, instance_weights=None):
-    print("\n🚀 Starting PyTorch model training with Regularization...")
+    print("\nStarting PyTorch model training with Regularization...")
     print(f"Initial LR: {start_lr}, Epochs: {epochs}, Dropout: {dropout_p}")
     
     # PyTorch doesn't understand Pandas. We must convert data to "Tensors"
@@ -85,7 +85,7 @@ def train_model(X_train, y_train, epochs=100, start_lr=0.01, class_weights=None,
 
     return model
 
-# 3. Evaluation Function
+
 def evaluate_model(model, X_test, y_test):
     model.eval() # Set model to evaluation mode (disables dropout/batchnorm if any)
     
@@ -100,9 +100,8 @@ def evaluate_model(model, X_test, y_test):
     # Calculate metrics
     pred_numpy = predictions.numpy()
     acc = accuracy_score(y_test, pred_numpy)
-    print(f"\n🎯 Accuracy on test set: {acc * 100:.2f}%\n")
+    print(f"Accuracy on test set: {acc * 100:.2f}%\n")
     
-    # Bonus: Detailed report to see performance on Class 0 vs Class 1
     print("--- Classification Report ---")
     print(classification_report(y_test, pred_numpy))
     
@@ -116,7 +115,6 @@ def evaluate_model_threshold(model, X_test, y_test, threshold=0.5):
     with torch.no_grad():
         outputs = model(X_tensor)
         probabilities = torch.sigmoid(outputs)
-        # 🔴 CHANGEMENT ICI : On remplace .round() par notre seuil
         predictions = (probabilities >= threshold).float()
 
     pred_numpy = predictions.numpy().flatten()
