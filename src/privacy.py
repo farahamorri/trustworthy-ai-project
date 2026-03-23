@@ -9,7 +9,7 @@ from src.model import CreditModel
 
 def attack_mia(model, X_train, y_train, X_test, y_test):
     """Simulates a rule-based Membership Inference Attack based on generalization gap."""
-    print("\nPhase 4: MIA Attack (Rule-Based) by Olivia...")
+    print("\n MIA Attack (Rule-Based)")
     
     model.eval()
     with torch.no_grad():
@@ -41,7 +41,7 @@ def attack_mia(model, X_train, y_train, X_test, y_test):
 
 def train_private_model(X_train, y_train, class_weights=None, epochs=15, lr=0.01):
     """Trains a model with Differential Privacy (DP-SGD) using Opacus."""
-    print("\nPhase 4: Differential Privacy Defense (DP-SGD)")
+    print("\nDifferential Privacy Defense (DP-SGD)")
     
     X_tensor = torch.tensor(X_train.values, dtype=torch.float32)
     y_tensor = torch.tensor(y_train.values, dtype=torch.float32).unsqueeze(1)
